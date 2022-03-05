@@ -1,10 +1,10 @@
 const fs = require("fs");
 
-let v = 25;                   // true value
-let u = 50;                   // upper bound
-let l = 0;                    // lower bound
-let epsilon = 5;              // privacy parameter
-let d = 50;                   // precision
+let v = 50;                   // true value
+let u = 128;                  // upper bound (maybe +- a power of two?)
+let l = 0;                    // lower bound (maybe +- a power of two?)
+let epsilon = 10;             // privacy parameter - larger epsilon means smaller perturbation
+let d = 20;                   // precision of probabilities -- 2 ** (-20) should do
 
 console.log("Original value v:       " + v);
 console.log("Lower bound:            " + l);
@@ -14,21 +14,17 @@ console.log("d (precision):          " + d);
 console.log("");
 
 let K = Math.ceil(u-l);
+let nBits = Math.ceil(Math.log2(K));
 console.log("K:                      " + K.toString());
+console.log("Number of bits:         " + nBits.toString());
 console.log("");
 console.log("=======");
 
-
-let nBits = Math.ceil(Math.log2(K));
-
-console.log("Number of bits:         " + nBits.toString());
-console.log("")
-
+// comment for seeing logs
 console.debug = function() {};
 
 function getDPRes() {
 
-    //console.log = function() {}
     let res="";
 
     for (let k = 0; k < nBits; k++) {
