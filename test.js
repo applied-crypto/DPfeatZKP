@@ -1,9 +1,9 @@
 const fs = require("fs");
 
-let v = 50;                   // true value
-let u = 100;                   // upper bound
+let v = 25;                   // true value
+let u = 50;                   // upper bound
 let l = 0;                    // lower bound
-let epsilon = 10;              // privacy parameter
+let epsilon = 5;              // privacy parameter
 let d = 50;                   // precision
 
 console.log("Original value v:       " + v);
@@ -17,15 +17,21 @@ let K = Math.ceil(u-l);
 console.log("K:                      " + K.toString());
 console.log("");
 console.log("=======");
-console.log("");
+
+
+let nBits = Math.ceil(Math.log2(K));
+
+console.log("Number of bits:         " + nBits.toString());
+console.log("")
 
 console.debug = function() {};
 
 function getDPRes() {
 
     //console.log = function() {}
+    let res="";
 
-    for (let k = 0; k < K; k++) {
+    for (let k = 0; k < nBits; k++) {
 
         console.debug("");
         console.debug("Round k=" + k);
@@ -64,6 +70,8 @@ function getDPRes() {
             // happens when Bits are not equal
             if (bitstring[j] == "1") {
                 console.debug("    Bit is one -- determining noise")
+                res = "1" + res;
+                break;
                 // randomstring[d] is the last random bit for the sign
                 if (randomstring[d] == 0) {
                     if (v + k > u) {
@@ -88,19 +96,27 @@ function getDPRes() {
                 }
             } else {
                 console.debug("Breaking (Bits not equal but binary expansion bit is zero) -- next k");
+                res = "0" + res;
                 break;
             }
         }
     }
     console.debug("");
     console.debug("Returning original v because loop ended (non-termination case): " + v);
-    return v;
+
+    let result = parseInt(res, 2)
+    let sign = 2 * ((Math.ceil(Math.random() * 1000) % 2) - 0.5);
+    result = v + sign * result;
+
+    if (result < -128 || result > 128) return v;
+    else return result;
+    //return v;
 
 }
 
 function createHistogram(n) {
 
-    let abs_counts = new Array(u - l + 3).fill(0);
+    let abs_counts = new Array(257).fill(0);
     console.debug(abs_counts);
 
     console.log("Creating Histogram for n=" + n);
@@ -110,7 +126,7 @@ function createHistogram(n) {
             console.debug("Loop for i=" + i);
             let res = getDPRes();
             console.debug(res);
-            abs_counts[res - l + 1]++;
+            abs_counts[res + 128]++;
         }
     } catch (err) {
         console.log(err);
@@ -122,9 +138,9 @@ function createHistogram(n) {
 
 let data = createHistogram(100000);
 
-let xs = new Array(u - l + 3).fill(0);
-for (let i = 0; i < u - l + 3; i++) {
-    xs[i] = i - l - 1;
+let xs = new Array(257).fill(0);
+for (let i = -128; i < 129; i++) {
+    xs[i+128] = i;
 }
 
 console.debug(xs.length);
