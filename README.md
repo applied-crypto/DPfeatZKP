@@ -13,4 +13,4 @@
 - install packages   
 ```npm i ```
 - generate histogram  
-```node test.js && python3 plot.py```
+```node generateHistogramData.js && python3 plot.py```
