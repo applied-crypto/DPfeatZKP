@@ -2,7 +2,7 @@ const { writeFile } = require("fs");
 const { poseidonCircomlib } = require("./poseidonCircomlib");
 
 let challenge = 12345; // randomness from the verifier
-let skey = 67890;      // verifiable randomness from the prover
+let skey = 12345;      // verifiable randomness from the prover
 
 let randomnessBeacon = parseInt(challenge.toString() + skey.toString()); // starting point for derivation of random numbers (hashes)
 console.log("Randomness beacon:      " + randomnessBeacon.toString());
@@ -22,7 +22,7 @@ console.log("epsilon (from DP def.): " + epsilon);
 console.log("d (precision):          " + d);
 console.log("");
 
-let K = Math.ceil(u-l);
+let K = Math.ceil(u - l);
 let nBits = Math.ceil(Math.log2(K));  // as the noise is bounded by K, its number of bits, nBits, is bounded by log2(K), rounded up
 console.log("K:                      " + K.toString());
 console.log("Number of bits:         " + nBits.toString());
@@ -30,10 +30,10 @@ console.log("");
 console.log("=======");
 
 // comment this to see detailed logs
-console.debug = function() {};
+//console.debug = function () { };
 
 // returns bit representation of the Poseidon hash of some input
-function getPoseidonBits(input){
+function getPoseidonBits(input) {
     return poseidonCircomlib([input]).toString(2);
 }
 
@@ -69,13 +69,14 @@ function getDPRes() {
     // create randomness with sufficient length -- there are nBit rounds that need up to d random bits and one bit for determining the sign of the noise
     let randomBitString = "";
     while (randomBitString.length < nBits * d + 1) {
-        randomBitString = randomBitString + getPoseidonBits(currentRandomnessSeed);
+        //randomBitString = randomBitString + getPoseidonBits(currentRandomnessSeed);
+        randomBitString = poseidonCircomlib([currentRandomnessSeed, challenge, skey]).toString(2);
         currentRandomnessSeed += 1; // update randomness for the next time, it is not i.i.d. if the same randomness is used as input for the Poseidon hash function every time
     }
-    console.debug("Random sequence:       " + randomBitString);
+    console.log("Random sequence:       " + randomBitString);
 
     // this will become the bit representation of the noise -- each bit is determined according to an exponential distribution
-    let res="";
+    let res = "";
 
     // loop through all the nBits bits of the noise
     for (let k = 0; k < nBits; k++) {
@@ -146,11 +147,11 @@ function createHistogram(n) {
     return abs_counts
 }
 
-let data = createHistogram(10000);
+let data = createHistogram(1);
 
 let xs = new Array(257).fill(0);
 for (let i = -128; i < 129; i++) {
-    xs[i+128] = i;
+    xs[i + 128] = i;
 }
 
 console.debug(xs.length);
@@ -164,8 +165,8 @@ console.debug("");
 console.debug("y-values: ")
 console.debug(data);
 
-writeFile("./result.json", JSON.stringify({"x": xs, "y": data}, null, 4), (err) => {
-    if(err) console.log(err);
+writeFile("./result.json", JSON.stringify({ "x": xs, "y": data }, null, 4), (err) => {
+    if (err) console.log(err);
 })
 
 console.debug("Final randomness: " + currentRandomnessSeed);
