@@ -1,5 +1,4 @@
 const { writeFile } = require("fs");
-const { poseidonCircomlib } = require("./poseidonCircomlib");
 const { buildSimplePoseidon } = require("./poseidon.js");
 
 let challenge = 12345; // randomness from the verifier
@@ -31,12 +30,15 @@ console.log("");
 console.log("=======");
 
 // comment this to see detailed logs
-//console.debug = function () { };
+console.debug = function () { };
 
+/*
 // returns bit representation of the Poseidon hash of some input
 function getPoseidonBits(input) {
     return poseidonCircomlib([input]).toString(2);
 }
+
+ */
 
 // create probabilities -- these will be either hardcoded or public inputs (or their Merkle root is a public input)
 let bitstrings = [];
@@ -70,7 +72,7 @@ console.log(JSON.stringify(bitstrings));
 
 
 // returns exponential noise with cut-off on the boundaries
-async function getDPRes() {
+async function getDPRes(poseidon) {
 
     // create randomness with sufficient length -- there are nBit rounds that need up to d random bits and one bit for determining the sign of the noise
     let randomBitString = "";
@@ -79,16 +81,15 @@ async function getDPRes() {
             randomBitString = poseidonCircomlib([currentRandomnessSeed, challenge, skey]).toString(2);
             currentRandomnessSeed += 1; // update randomness for the next time, it is not i.i.d. if the same randomness is used as input for the Poseidon hash function every time
         } */
-    let simplePoseidon = await buildSimplePoseidon();
-    let hash = BigInt(simplePoseidon.buff2bigIntString(simplePoseidon([skey, challenge])));
-    console.log("+++ Poseidon Hash: ", hash);
+    let hash = BigInt(poseidon.buff2bigIntString(poseidon([skey, challenge, Math.ceil(Math.random() * 1000000)])));
+    console.debug("+++ Poseidon Hash: ", hash);
     randomBitString = hash.toString(2);
     let sorted = [];
     for (let i = randomBitString.length - 1; i >= 0; i--) {
         sorted.push(randomBitString[i]);
     }
     randomBitString = sorted;
-    console.log("Random sequence:       " + randomBitString);
+    console.debug("Random sequence:       " + randomBitString);
 
     // this will become the bit representation of the noise -- each bit is determined according to an exponential distribution
     let res = "";
@@ -128,24 +129,29 @@ async function getDPRes() {
     }
 
     // determine the noise as number from its bit representation
-    console.log(res)
+    console.debug(res)
     let result = parseInt(res, 2)
-    console.log(result)
+    console.debug(result)
 
     // determine the sign of the noise
     let sign = 2 * (randomBitString[nBits * d + 1] - 0.5); // +1 if last bit is 1, -1 if last bit is 0
     result = v + sign * result;
 
     // if the noise is too large, set noise to 0
-    if (result < -128 || result > 128) return v;
-    else return result;
+    if (result < 0 || result > 128) {
+         console.debug("Returning " + v);
+         return v;
+    } else {
+        console.debug("Returning " + result);
+        return result;
+    }
 
 }
 
 // for testing purposes only
-function createHistogram(n) {
+async function createHistogram(poseidon, n) {
 
-    let abs_counts = new Array(257).fill(0);
+    let abs_counts = new Array(129).fill(0);
     console.debug(abs_counts);
 
     console.log("");
@@ -154,9 +160,9 @@ function createHistogram(n) {
         console.debug("Starting loop");
         for (let i = 0; i < n; i++) {
             console.debug("Loop for i=" + i);
-            let res = getDPRes();
+            let res = await getDPRes(poseidon);
             console.debug(res);
-            abs_counts[res + 128]++;
+            abs_counts[res]++;
         }
     } catch (err) {
         console.log(err);
@@ -166,26 +172,40 @@ function createHistogram(n) {
     return abs_counts
 }
 
-let data = createHistogram(1);
+async function saveData(n) {
 
-let xs = new Array(257).fill(0);
-for (let i = -128; i < 129; i++) {
-    xs[i + 128] = i;
+    const simplePoseidon = await buildSimplePoseidon();
+
+    let data = await createHistogram(simplePoseidon, n);
+    console.log(data.length);
+
+    let xs = new Array(129).fill(0);
+    for (let i = 0; i < 129; i++) {
+        xs[i] = i;
+    }
+
+    console.debug(xs.length);
+    console.debug(data.length);
+
+    console.debug("");
+    console.debug("x values: ");
+    console.debug(xs);
+
+    console.debug("");
+    console.debug("y-values: ")
+    console.log(data);
+
+    for (let i = 0; i < 129; i++) {
+        console.log(data[i]);
+        console.log(data[i]/n);
+        data[i] = data[i] / n;
+    }
+
+    writeFile("./result.json", JSON.stringify({"x": xs, "y": data}, null, 4), (err) => {
+        if (err) console.log(err);
+    })
+
+    console.debug("Final randomness: " + currentRandomnessSeed);
 }
 
-console.debug(xs.length);
-console.debug(data.length);
-
-console.debug("");
-console.debug("x values: ");
-console.debug(xs);
-
-console.debug("");
-console.debug("y-values: ")
-console.debug(data);
-
-writeFile("./result.json", JSON.stringify({ "x": xs, "y": data }, null, 4), (err) => {
-    if (err) console.log(err);
-})
-
-console.debug("Final randomness: " + currentRandomnessSeed);
+saveData(10000);
