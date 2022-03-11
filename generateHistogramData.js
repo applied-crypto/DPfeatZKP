@@ -1,5 +1,6 @@
 const { writeFile } = require("fs");
 const { poseidonCircomlib } = require("./poseidonCircomlib");
+const { buildSimplePoseidon } = require("./poseidon.js");
 
 let challenge = 12345; // randomness from the verifier
 let skey = 12345;      // verifiable randomness from the prover
@@ -56,23 +57,37 @@ for (let k = 0; k < nBits; k++) {
         bitstring = bitstring + "0";
     }
     console.debug("Binary representation B_{j,k}: " + pk.toString(2) + " --> " + bitstring)
-    bitstrings.push(bitstring)
+    let sorted = [];
+    for (let i = 0; i < bitstring.length; i++) {
+        sorted.push(bitstring[i]);
+    }
+    bitstrings.push(sorted)
 }
 
-console.log("Bitstrings B_k: " + bitstrings.toString());
+//console.log("Bitstrings B_k: " + bitstrings.toString());
+console.log(JSON.stringify(bitstrings));
 
 
 
 // returns exponential noise with cut-off on the boundaries
-function getDPRes() {
+async function getDPRes() {
 
     // create randomness with sufficient length -- there are nBit rounds that need up to d random bits and one bit for determining the sign of the noise
     let randomBitString = "";
-    while (randomBitString.length < nBits * d + 1) {
-        //randomBitString = randomBitString + getPoseidonBits(currentRandomnessSeed);
-        randomBitString = poseidonCircomlib([currentRandomnessSeed, challenge, skey]).toString(2);
-        currentRandomnessSeed += 1; // update randomness for the next time, it is not i.i.d. if the same randomness is used as input for the Poseidon hash function every time
+    /*     while (randomBitString.length < nBits * d + 1) {
+            //randomBitString = randomBitString + getPoseidonBits(currentRandomnessSeed);
+            randomBitString = poseidonCircomlib([currentRandomnessSeed, challenge, skey]).toString(2);
+            currentRandomnessSeed += 1; // update randomness for the next time, it is not i.i.d. if the same randomness is used as input for the Poseidon hash function every time
+        } */
+    let simplePoseidon = await buildSimplePoseidon();
+    let hash = BigInt(simplePoseidon.buff2bigIntString(simplePoseidon([skey, challenge])));
+    console.log("+++ Poseidon Hash: ", hash);
+    randomBitString = hash.toString(2);
+    let sorted = [];
+    for (let i = randomBitString.length - 1; i >= 0; i--) {
+        sorted.push(randomBitString[i]);
     }
+    randomBitString = sorted;
     console.log("Random sequence:       " + randomBitString);
 
     // this will become the bit representation of the noise -- each bit is determined according to an exponential distribution
@@ -85,20 +100,22 @@ function getDPRes() {
         console.debug("B_{j,k}:                    " + bitstring);
 
         // run the algorithm that tosses a biased coin with winning probability pk
-        for (let j = 0; j < d; j++) {
+        for (let j = 0; j < d + 2; j++) {
+            let positionRandomBitString = k * (d + 2) + j;
+            let positionBitString = j;
             console.debug("");
-            console.debug("Looking at position " + j.toString() + " in the B_{j,k} and at position " + (k * d + j).toString() + " in the random Bitstring");
-            console.debug("    Bit from B_{j,k}:         " + bitstring[j]);
-            console.debug("    Bit from randomness: " + randomBitString[k * d + j]);
+            console.debug("Looking at position " + positionBitString.toString() + " in the B_{j,k} and at position " + positionRandomBitString.toString() + " in the random Bitstring");
+            console.debug("    Bit from B_{j,k}:         " + bitstring[positionBitString]);
+            console.debug("    Bit from randomness: " + randomBitString[positionRandomBitString]);
 
-            if (bitstring[j] == randomBitString[k * d + j]) {
+            if (bitstring[j] == randomBitString[positionRandomBitString]) {
                 console.debug("Bits are equal -- Continuing with next j");
                 continue;
             }
 
             console.debug("Bits are not equal -- Checking whether jth bit in the binary representation of the bias (B_{j,k}) is 1")
             // happens when Bits are not equal
-            if (bitstring[j] == "1") {
+            if (bitstring[positionBitString] == "1") {
                 console.debug("    Bit is one -- coin toss results in 1")
                 res = "1" + res;
                 break;
@@ -111,7 +128,9 @@ function getDPRes() {
     }
 
     // determine the noise as number from its bit representation
+    console.log(res)
     let result = parseInt(res, 2)
+    console.log(result)
 
     // determine the sign of the noise
     let sign = 2 * (randomBitString[nBits * d + 1] - 0.5); // +1 if last bit is 1, -1 if last bit is 0
