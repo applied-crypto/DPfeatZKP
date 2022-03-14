@@ -1,4 +1,4 @@
-const { buildPoseidon } = require('circomlibjs');
+const { buildPoseidon, buildEddsa } = require('circomlibjs');
 //import { string2buff, buff2bigIntString } from './utils.js';
 
 async function buildSimplePoseidon() {
@@ -6,6 +6,7 @@ async function buildSimplePoseidon() {
      * Poseidon hash function
      */
     let poseidon = await buildPoseidon();
+    let eddsa = await buildEddsa();
     /**
     * Finite field of poseidon
     */
@@ -42,6 +43,28 @@ async function buildSimplePoseidon() {
         return buff;
     }
 
+    const sign = (sk, msg) => {
+
+        let skBuff = Buffer.from(sk, "hex");
+
+        const msgF = F.e(msg);
+
+        return eddsa.signPoseidon(skBuff, msgF);
+    }
+
+    const sk2pk = (sk) => {
+
+        let skBuff = Buffer.from(sk, "hex");
+
+        return eddsa.prv2pub(skBuff);
+    }
+
+    const verify = (msg, signature, pk) => {
+        const msgF = F.e(msg);
+
+        return eddsa.verifyPoseidon(msgF, signature, pk);
+    }
+
     /**
      * Wrapper for poseidon hash function which accepts strings and numbers outside an array 
      * @param {string | Uint8Array | Number | Number[]} input 
@@ -66,6 +89,12 @@ async function buildSimplePoseidon() {
     simplePoseidon.buff2bigIntString = buff2bigIntString;
 
     simplePoseidon.bigIntString2buff = bigIntString2buff;
+
+    simplePoseidon.sign = sign;
+
+    simplePoseidon.sk2pk = sk2pk;
+
+    simplePoseidon.verify = verify;
 
     return simplePoseidon;
 }
