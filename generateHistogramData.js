@@ -2,7 +2,8 @@ const { writeFile } = require("fs");
 const { buildSimplePoseidon } = require("./poseidon.js");
 
 let challenge = 12345; // randomness from the verifier
-let skey = 12345;      // verifiable randomness from the prover
+//let skey = 12345;      // verifiable randomness from the prover
+let skey = "0001020304050607080900010203040506070809000102030405060708090001";
 
 let randomnessBeacon = parseInt(challenge.toString() + skey.toString()); // starting point for derivation of random numbers (hashes)
 console.log("Randomness beacon:      " + randomnessBeacon.toString());
@@ -81,7 +82,27 @@ async function getDPRes(poseidon) {
             randomBitString = poseidonCircomlib([currentRandomnessSeed, challenge, skey]).toString(2);
             currentRandomnessSeed += 1; // update randomness for the next time, it is not i.i.d. if the same randomness is used as input for the Poseidon hash function every time
         } */
-    let hash = BigInt(poseidon.buff2bigIntString(poseidon([skey, challenge, Math.ceil(Math.random() * 1000000)])));
+    let signature = poseidon.sign(skey, challenge);
+    let bigInt = {};
+    bigInt.R8 = [];
+    bigInt.R8[0] = poseidon.buff2bigIntString(signature.R8[0]);
+    bigInt.R8[1] = poseidon.buff2bigIntString(signature.R8[1]);
+    bigInt.S = signature.S.toString();
+
+    console.log("Signature: " + JSON.stringify(bigInt));
+
+    let pk = poseidon.sk2pk(skey);
+    let pkBigInt = [];
+    pkBigInt[0] = poseidon.buff2bigIntString(pk[0]);
+    pkBigInt[1] = poseidon.buff2bigIntString(pk[1]);
+
+    console.log("PK: " + JSON.stringify(pkBigInt));
+
+    console.log(poseidon.verify(challenge, signature, pk));
+    //Math.ceil(Math.random() * 1000000)
+    //    let hash = BigInt(poseidon.buff2bigIntString(poseidon([signature.R8[0], signature.R8[1], signature.S])));
+    let hash = BigInt(poseidon.buff2bigIntString(poseidon([signature.R8[0], signature.R8[1], signature.S, Math.ceil(Math.random() * 1000000)])));
+
     console.debug("+++ Poseidon Hash: ", hash);
     randomBitString = hash.toString(2);
     let sorted = [];
@@ -139,10 +160,10 @@ async function getDPRes(poseidon) {
 
     // if the noise is too large, set noise to 0
     if (result < 0 || result > 128) {
-         console.debug("Returning " + v);
-         return v;
+        console.log("Returning " + v);
+        return v;
     } else {
-        console.debug("Returning " + result);
+        console.log("Returning " + result);
         return result;
     }
 
@@ -197,11 +218,11 @@ async function saveData(n) {
 
     for (let i = 0; i < 129; i++) {
         console.log(data[i]);
-        console.log(data[i]/n);
+        console.log(data[i] / n);
         data[i] = data[i] / n;
     }
 
-    writeFile("./result.json", JSON.stringify({"x": xs, "y": data}, null, 4), (err) => {
+    writeFile("./result.json", JSON.stringify({ "x": xs, "y": data }, null, 4), (err) => {
         if (err) console.log(err);
     })
 
