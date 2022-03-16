@@ -41,9 +41,9 @@ template Main(nBits, d) {
    component isEqual[nBits][d];
 
    signal noiseBits[nBits];
-   signal evaluation1[nBits][d];
-   signal evaluation2[nBits][d];
-   signal evaluation3[nBits][d + 1];
+   signal eval1[nBits][d];
+   signal eval2[nBits][d];
+   signal eval3[nBits][d + 1];
    signal hit[nBits][d + 1];
 
    for (var i = 0; i < nBits; i++) {
@@ -55,7 +55,7 @@ template Main(nBits, d) {
    for (var k = 0;  k < nBits; k++) {
 
       hit[k][0] <== 1;
-      evaluation3[k][0] <== 0;
+      eval3[k][0] <== 0;
 
       for (var j = 0;  j < d; j++) {
          isEqual[k][j].in[0] <== probability[k][j];
@@ -63,11 +63,11 @@ template Main(nBits, d) {
 
          hit[k][j + 1] <== hit[k][j] * isEqual[k][j].out;
 
-         evaluation1[k][j] <== hit[k][j] * (1 - isEqual[k][j].out);
-         evaluation2[k][j] <== evaluation1[k][j] * probability[k][j];
-         evaluation3[k][j + 1] <== evaluation3[k][j] + evaluation2[k][j];
+         eval1[k][j] <== hit[k][j] * (1 - isEqual[k][j].out);
+         eval2[k][j] <== eval1[k][j] * probability[k][j];
+         eval3[k][j + 1] <== eval3[k][j] + eval2[k][j];
       }
-      noiseBits[k] <== evaluation3[k][d];
+      noiseBits[k] <== eval3[k][d];
    }
 
    component numify = Bits2Num(nBits);

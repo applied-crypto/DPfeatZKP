@@ -89,16 +89,16 @@ async function getDPRes(poseidon) {
     bigInt.R8[1] = poseidon.buff2bigIntString(signature.R8[1]);
     bigInt.S = signature.S.toString();
 
-    console.log("Signature: " + JSON.stringify(bigInt));
+    console.debug("Signature: " + JSON.stringify(bigInt));
 
     let pk = poseidon.sk2pk(skey);
     let pkBigInt = [];
     pkBigInt[0] = poseidon.buff2bigIntString(pk[0]);
     pkBigInt[1] = poseidon.buff2bigIntString(pk[1]);
 
-    console.log("PK: " + JSON.stringify(pkBigInt));
+    console.debug("PK: " + JSON.stringify(pkBigInt));
 
-    console.log(poseidon.verify(challenge, signature, pk));
+    console.debug(poseidon.verify(challenge, signature, pk));
     //Math.ceil(Math.random() * 1000000)
     //    let hash = BigInt(poseidon.buff2bigIntString(poseidon([signature.R8[0], signature.R8[1], signature.S])));
     let hash = BigInt(poseidon.buff2bigIntString(poseidon([signature.R8[0], signature.R8[1], signature.S, Math.ceil(Math.random() * 1000000)])));
@@ -160,10 +160,10 @@ async function getDPRes(poseidon) {
 
     // if the noise is too large, set noise to 0
     if (result < 0 || result > 128) {
-        console.log("Returning " + v);
+        console.debug("Returning " + v);
         return v;
     } else {
-        console.log("Returning " + result);
+        console.debug("Returning " + result);
         return result;
     }
 
