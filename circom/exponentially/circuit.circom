@@ -1,3 +1,5 @@
+pragma circom 2.0.0;
+
 include "./lib/poseidon.circom";
 include "./lib/bitify.circom";
 include "./lib/eddsaposeidon.circom";
@@ -6,7 +8,6 @@ template Main(nBits, d) {
    //signal output out;
    signal input challenge;
    signal input value;
-   signal randomSequence[254];
    signal input probability[nBits][d];
    signal input R8[2];
    signal input S;
@@ -30,6 +31,8 @@ template Main(nBits, d) {
    hash.inputs[2] <== S;
 
    bitify.in <== hash.out; 
+
+   signal randomSequence[254];
 
    for(var i = 0; i < 254; i++) {
       randomSequence[i] <== bitify.out[i];
