@@ -5,7 +5,6 @@ include "./lib/bitify.circom";
 include "./lib/eddsaposeidon.circom";
 
 template Main(nBits, d) {
-   //signal output out;
    signal input challenge;
    signal input value;
    signal input probability[nBits][d];

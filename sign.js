@@ -6,8 +6,7 @@ const toHexString = bytes =>
 
 const l = data => console.log(data);
 
-async function buildSimpleEddsa() {
-    const eddsa = await buildEddsa();
+async function sign() {
     const poseidon = await buildSimplePoseidon();
 
 
@@ -40,7 +39,7 @@ async function buildSimpleEddsa() {
     l(poseidon.verify(msg, signature, pk));
 }
 
-buildSimpleEddsa();
+sign();
 
 function bigIntToStringObject(obj) {
     return JSON.parse(JSON.stringify(obj, (key, value) =>

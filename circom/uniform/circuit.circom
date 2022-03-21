@@ -39,7 +39,7 @@ template Main() {
    signal output out;
 
    rand <== randomSequence[0] * randomSequence[1];
-   out <== (1 - randomSequence[0]) * value + randomSequence[1];
+   out <== (1 - randomSequence[0]) * value + rand;
    
 }
 
