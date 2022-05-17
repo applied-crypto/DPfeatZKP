@@ -7,9 +7,12 @@
 ```sudo apt-get install -y python3-pip```
     - matplotlib   
     ```python3 -m pip install matplotlib```
+- circom (https://github.com/iden3/circom)
+- snarkjs (https://github.com/iden3/snarkjs) 
+- rapidsnark (https://github.com/iden3/rapidsnark) 
 
 ## Run
-
+- run trusted setup (as described in the snarkjs repository)
 - install packages   
 ```npm i ```
 - generate histogram  
