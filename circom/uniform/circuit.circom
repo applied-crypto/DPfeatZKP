@@ -1,6 +1,6 @@
 pragma circom 2.0.0;
 
-include "./lib/poseidon.circom";
+include "./poseidon.circom";
 include "./lib/bitify.circom";
 include "./lib/eddsaposeidon.circom";
 

@@ -14,7 +14,7 @@ let v = 50;                   // true value
 let u = 128;                  // upper bound (maybe +- a power of two?)
 let l = 0;                    // lower bound (maybe +- a power of two?)
 let epsilon = 10;             // privacy parameter - larger epsilon means smaller perturbation
-let d = 20;                   // precision of probabilities -- 2 ** (-20) should do
+let d = 20  ;                   // precision of probabilities -- 2 ** (-20) should do
 
 console.log("Original value v:       " + v);
 console.log("Lower bound:            " + l);
@@ -142,7 +142,7 @@ async function getDPRes(poseidon) {
                 res = "1" + res;
                 break;
             } else {
-                console.debug("But is zero -- coin toss results in 0");
+                console.debug("Bit is zero -- coin toss results in 0");
                 res = "0" + res;
                 break;
             }
@@ -156,17 +156,27 @@ async function getDPRes(poseidon) {
 
     // determine the sign of the noise
     let sign = 2 * (randomBitString[nBits * d + 1] - 0.5); // +1 if last bit is 1, -1 if last bit is 0
-    result = v + sign * result;
 
+    if (sign == -1 && result == 0) {
+        // take nBits bits from randomBitString to create uuid noise between 0 and 2^nBits - modulo will happen below
+        result = parseInt(randomBitString.slice(nBits * d + 2, nBits * d + 2 + nBits).join(""));
+    } else {
+        result = sign * result;
+    }
     // if the noise is too large, set noise to 0
+    /*
     if (result < 0 || result > 128) {
-        console.debug("Returning " + v);
-        return v;
+        console.debug("Returning " + v + "noise mod " + 128);
+        return result % 128;
     } else {
         console.debug("Returning " + result);
         return result;
     }
 
+    */
+    result = (v + result) % 128;
+    if (result < 0 ) result += 128;
+    return result
 }
 
 // for testing purposes only
@@ -181,8 +191,10 @@ async function createHistogram(poseidon, n) {
         console.debug("Starting loop");
         for (let i = 0; i < n; i++) {
             console.debug("Loop for i=" + i);
+            // let res = (v + await getDPRes(poseidon) - await getDPRes(poseidon)) % 128;
+            // if (res < 0 ) res += 128;
             let res = await getDPRes(poseidon);
-            console.debug(res);
+            console.log(i + "/" + n + " --> " + res);
             abs_counts[res]++;
         }
     } catch (err) {
