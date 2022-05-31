@@ -82,6 +82,20 @@ async function buildSimplePoseidon() {
         return poseidon(input);
     };
 
+    const toBigIntStringObject = (obj) => {
+        return JSON.parse(JSON.stringify(obj, (key, value) => {
+            if (value.constructor.name === 'Uint8Array') {
+                return buff2bigIntString(value);
+            } else if (typeof value === 'bigint') {
+                return value.toString();
+            } else {
+                return value;
+            }
+        }));
+    }
+
+    simplePoseidon.toBigIntStringObject = toBigIntStringObject;
+
     simplePoseidon.F = F;
 
     simplePoseidon.string2buff = string2buff;

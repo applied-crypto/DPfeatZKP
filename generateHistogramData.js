@@ -14,7 +14,7 @@ let v = 50;                   // true value
 let u = 128;                  // upper bound (maybe +- a power of two?)
 let l = 0;                    // lower bound (maybe +- a power of two?)
 let epsilon = 10;             // privacy parameter - larger epsilon means smaller perturbation
-let d = 20  ;                   // precision of probabilities -- 2 ** (-20) should do
+let d = 20;                   // precision of probabilities -- 2 ** (-20) should do
 
 console.log("Original value v:       " + v);
 console.log("Lower bound:            " + l);
@@ -25,6 +25,7 @@ console.log("");
 
 let K = Math.ceil(u - l);
 let nBits = Math.ceil(Math.log2(K));  // as the noise is bounded by K, its number of bits, nBits, is bounded by log2(K), rounded up
+console.log(nBits)
 console.log("K:                      " + K.toString());
 console.log("Number of bits:         " + nBits.toString());
 console.log("");
@@ -83,13 +84,14 @@ async function getDPRes(poseidon) {
             currentRandomnessSeed += 1; // update randomness for the next time, it is not i.i.d. if the same randomness is used as input for the Poseidon hash function every time
         } */
     let signature = poseidon.sign(skey, challenge);
+//    console.log(poseidon.toBigIntStringObject(signature));
     let bigInt = {};
     bigInt.R8 = [];
     bigInt.R8[0] = poseidon.buff2bigIntString(signature.R8[0]);
     bigInt.R8[1] = poseidon.buff2bigIntString(signature.R8[1]);
     bigInt.S = signature.S.toString();
 
-    console.debug("Signature: " + JSON.stringify(bigInt));
+    //    console.debug("Signature: " + JSON.stringify(bigInt));
 
     let pk = poseidon.sk2pk(skey);
     let pkBigInt = [];
@@ -134,7 +136,6 @@ async function getDPRes(poseidon) {
                 console.debug("Bits are equal -- Continuing with next j");
                 continue;
             }
-
             console.debug("Bits are not equal -- Checking whether jth bit in the binary representation of the bias (B_{j,k}) is 1")
             // happens when Bits are not equal
             if (bitstring[positionBitString] == "1") {
@@ -160,6 +161,8 @@ async function getDPRes(poseidon) {
     if (sign == -1 && result == 0) {
         // take nBits bits from randomBitString to create uuid noise between 0 and 2^nBits - modulo will happen below
         result = parseInt(randomBitString.slice(nBits * d + 2, nBits * d + 2 + nBits).join(""));
+        console.log("RRRRrrrrrandom!")
+        console.log("result", res);
     } else {
         result = sign * result;
     }
@@ -175,9 +178,16 @@ async function getDPRes(poseidon) {
 
     */
     result = (v + result) % 128;
-    if (result < 0 ) result += 128;
+    if (result < 0) result += 128;
     return result
 }
+
+async function implementCircom() {
+    const simplePoseidon = await buildSimplePoseidon();
+    let res = await getDPRes(simplePoseidon);
+}
+
+//implementCircom();
 
 // for testing purposes only
 async function createHistogram(poseidon, n) {
@@ -185,7 +195,6 @@ async function createHistogram(poseidon, n) {
     let abs_counts = new Array(129).fill(0);
     console.debug(abs_counts);
 
-    console.log("");
     console.log("Creating Histogram for n=" + n);
     try {
         console.debug("Starting loop");

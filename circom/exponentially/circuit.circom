@@ -70,21 +70,33 @@ template Main(nBits, d) {
       noiseBits[k] <== eval3[k][d];
    }
 
-   component numify = Bits2Num(nBits);
+   component numify[2];
+   numify[0] = Bits2Num(nBits);
+   numify[1] = Bits2Num(nBits);
+
    for (var i = 0; i < nBits; i++) {
-      numify.in[i] <== noiseBits[i];
+      numify[0].in[i] <== noiseBits[i];
    }
 
-   signal noise;
-   noise <== numify.out;
+   //Random Bit String ab Bit 154 wieder frei
 
-   signal sign; 
-   sign <== randomSequence[253] * (-1) + (1 - randomSequence[253]) * 1;
+   signal noise <== numify[0].out;
 
-   signal result; 
+   signal sign <== randomSequence[253] * (-1) + (1 - randomSequence[253]) * 1;
 
-   result <== value + sign * noise;   
+   signal resultA <== value + sign * noise; 
+   
+   for (var i = 0; i < nBits; i++) {
+      numify[1].in[i] <== randomSequence[(d * nBits) + i];
+   }
+   component isZero = IsZero();
+   isZero.in <== noise;
+   signal isResultB <== isZero.out * (1 - sign);
+   signal resultB <== isResultB * numify[1].out;
+   
+   signal result <== (1 - isResultB) * resultA + resultB;
 
+/*
    component lT = LessThan(7);
    component gT = GreaterThan(7);
 
@@ -98,11 +110,36 @@ template Main(nBits, d) {
    both <== gT.out * lT.out;
    
    signal out1;
-   signal output out2;
+   signal out2;
 
    out1 <== (1 - both) * value;
    out2 <== out1 + both * result;
+*/
+   signal output out; 
+   component modulo = Modulo();
+   modulo.in <== result;
+   modulo.mod <== 128;
 
+   out <== modulo.out;   
+}
+
+template Modulo() {
+   signal input in;
+   signal input mod;
+
+   signal output out;
+
+   signal div <-- in \ mod;
+   out <-- in - (div * mod);
+
+   in === div * mod + out;
+   
+   component lt = LessThan(252);
+
+   lt.in[0] <== out;
+   lt.in[1] <== mod;
+   lt.out === 1;
+   
 }
 
 component main {public [challenge, pk]} = Main(7, 22);
