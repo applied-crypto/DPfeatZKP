@@ -32,7 +32,7 @@ template Main(nBits, d) {
 
    bitify.in <== hash.out; 
 
-   signal output randomSequence[254];
+   signal randomSequence[254];
 
    for(var i = 0; i < 254; i++) {
       randomSequence[i] <== bitify.out[i];
@@ -78,13 +78,12 @@ template Main(nBits, d) {
       numify[0].in[i] <== noiseBits[i];
    }
 
-   //Random Bit String ab Bit 154 wieder frei
-
    signal noise <== numify[0].out;
+   //signal sign <== randomSequence[nBits * (d + 3)] * 1 + (1 - randomSequence[nBits * (d + 3)]) * (-1);
+   signal sign <== randomSequence[nBits * (d + 3)] * (value + noise);
 
-   signal sign <== randomSequence[nBits * (d + 1) + 1] * 1 + (1 - randomSequence[nBits * (d + 1) + 1]) * (-1);
-
-   signal resultA <== value + sign * noise; 
+//   signal resultA <== value + sign * noise; 
+   signal resultA <== (1 - randomSequence[nBits * (d + 3)]) * (value - noise) + sign;
    
    for (var i = 0; i < nBits; i++) {
       numify[1].in[i] <== randomSequence[((d + 2) * nBits) + i];

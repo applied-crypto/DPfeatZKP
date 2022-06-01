@@ -154,16 +154,17 @@ async function getDPRes(poseidon) {
     // determine the noise as number from its bit representation
     console.debug(res)
     let result = parseInt(res, 2)
-    console.debug(result)
+    console.log("Noise: ", result)
 
     // determine the sign of the noise
-    let sign = 2 * (randomBitString[nBits * (d + 3)] - 0.5); // +1 if last bit is 1, -1 if last bit is 0
-
+    let sign = 2 * (randomBitString[(nBits) * (d + 3 + 2)] - 0.5); // +1 if last bit is 1, -1 if last bit is 0
+    console.log("sign:", sign, "bit: ", randomBitString[(nBits) * (d + 3 + 2)]);
     if (sign == -1 && result == 0) {
         // take nBits bits from randomBitString to create uuid noise between 0 and 2^nBits - modulo will happen below
-        result = parseInt(randomBitString.slice(nBits * (d + 2), nBits * (d + 2) + nBits).join(""), 2);
-        console.log("RRRRrrrrrandom!")
+        result = parseInt(randomBitString.slice(nBits * (d + 2 + 2), (nBits) * (d + 2 + 2) + (nBits)).join(""), 2);
+        console.log("RRRRrrrrrandom! \n +++")
         console.log("result:", result, "challenge:", challenge, "signature:", JSON.stringify(poseidon.toBigIntStringObject(signature)));
+        return result;
     } else {
         result = sign * result;
     }
@@ -180,6 +181,7 @@ async function getDPRes(poseidon) {
     */
     result = (v + result) % 128;
     if (result < 0) result += 128;
+    console.log("result:", result, "challenge:", challenge, "signature:", JSON.stringify(poseidon.toBigIntStringObject(signature)));
     return result
 }
 
