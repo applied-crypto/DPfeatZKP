@@ -32,7 +32,7 @@ template Main(nBits, d) {
 
    bitify.in <== hash.out; 
 
-   signal randomSequence[254];
+   signal output randomSequence[254];
 
    for(var i = 0; i < 254; i++) {
       randomSequence[i] <== bitify.out[i];
@@ -82,39 +82,20 @@ template Main(nBits, d) {
 
    signal noise <== numify[0].out;
 
-   signal sign <== randomSequence[253] * (-1) + (1 - randomSequence[253]) * 1;
+   signal sign <== randomSequence[nBits * (d + 1) + 1] * 1 + (1 - randomSequence[nBits * (d + 1) + 1]) * (-1);
 
    signal resultA <== value + sign * noise; 
    
    for (var i = 0; i < nBits; i++) {
-      numify[1].in[i] <== randomSequence[(d * nBits) + i];
+      numify[1].in[i] <== randomSequence[((d + 2) * nBits) + i];
    }
    component isZero = IsZero();
    isZero.in <== noise;
-   signal isResultB <== isZero.out * (1 - sign);
+   signal isResultB <== isZero.out * (1 - randomSequence[nBits * (d + 3)]);
    signal resultB <== isResultB * numify[1].out;
    
    signal result <== (1 - isResultB) * resultA + resultB;
 
-/*
-   component lT = LessThan(7);
-   component gT = GreaterThan(7);
-
-   lT.in[0] <== result;
-   lT.in[1] <== 128;
-
-   gT.in[0] <== result;
-   gT.in[1] <== 0;
-  
-   signal both;
-   both <== gT.out * lT.out;
-   
-   signal out1;
-   signal out2;
-
-   out1 <== (1 - both) * value;
-   out2 <== out1 + both * result;
-*/
    signal output out; 
    component modulo = Modulo();
    modulo.in <== result;
