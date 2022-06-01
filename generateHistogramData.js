@@ -83,8 +83,9 @@ async function getDPRes(poseidon) {
             randomBitString = poseidonCircomlib([currentRandomnessSeed, challenge, skey]).toString(2);
             currentRandomnessSeed += 1; // update randomness for the next time, it is not i.i.d. if the same randomness is used as input for the Poseidon hash function every time
         } */
+    challenge = Math.ceil(Math.random() * 1000000);
     let signature = poseidon.sign(skey, challenge);
-//    console.log(poseidon.toBigIntStringObject(signature));
+    //    console.log(poseidon.toBigIntStringObject(signature));
     let bigInt = {};
     bigInt.R8 = [];
     bigInt.R8[0] = poseidon.buff2bigIntString(signature.R8[0]);
@@ -103,7 +104,7 @@ async function getDPRes(poseidon) {
     console.debug(poseidon.verify(challenge, signature, pk));
     //Math.ceil(Math.random() * 1000000)
     //    let hash = BigInt(poseidon.buff2bigIntString(poseidon([signature.R8[0], signature.R8[1], signature.S])));
-    let hash = BigInt(poseidon.buff2bigIntString(poseidon([signature.R8[0], signature.R8[1], signature.S, Math.ceil(Math.random() * 1000000)])));
+    let hash = BigInt(poseidon.buff2bigIntString(poseidon([signature.R8[0], signature.R8[1], signature.S])));
 
     console.debug("+++ Poseidon Hash: ", hash);
     randomBitString = hash.toString(2);
@@ -156,13 +157,13 @@ async function getDPRes(poseidon) {
     console.debug(result)
 
     // determine the sign of the noise
-    let sign = 2 * (randomBitString[nBits * d + 1] - 0.5); // +1 if last bit is 1, -1 if last bit is 0
+    let sign = 2 * (randomBitString[nBits * (d + 3)] - 0.5); // +1 if last bit is 1, -1 if last bit is 0
 
     if (sign == -1 && result == 0) {
         // take nBits bits from randomBitString to create uuid noise between 0 and 2^nBits - modulo will happen below
-        result = parseInt(randomBitString.slice(nBits * d + 2, nBits * d + 2 + nBits).join(""));
+        result = parseInt(randomBitString.slice(nBits * (d + 2), nBits * (d + 2) + nBits).join(""), 2);
         console.log("RRRRrrrrrandom!")
-        console.log("result", res);
+        console.log("result:", result, "challenge:", challenge, "signature:", JSON.stringify(poseidon.toBigIntStringObject(signature)));
     } else {
         result = sign * result;
     }
