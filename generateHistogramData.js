@@ -161,7 +161,13 @@ async function getDPRes(poseidon) {
     console.log("sign:", sign, "bit: ", randomBitString[(nBits) * (d + 3 + 2)]);
     if (sign == -1 && result == 0) {
         // take nBits bits from randomBitString to create uuid noise between 0 and 2^nBits - modulo will happen below
-        result = parseInt(randomBitString.slice(nBits * (d + 2 + 2), (nBits) * (d + 2 + 2) + (nBits)).join(""), 2);
+        let rand = randomBitString.slice(nBits * (d + 2 + 2), (nBits) * (d + 2 + 2) + (nBits)).join("")
+        let sorted = [];
+        for (let i = rand.length - 1; i >= 0; i--) {
+            sorted.push(rand[i]);
+        }
+        result = parseInt(sorted.join(""), 2);
+        console.log(randomBitString.slice(nBits * (d + 2 + 2), (nBits) * (d + 2 + 2) + (nBits)));
         console.log("RRRRrrrrrandom! \n +++")
         console.log("result:", result, "challenge:", challenge, "signature:", JSON.stringify(poseidon.toBigIntStringObject(signature)));
         return result;

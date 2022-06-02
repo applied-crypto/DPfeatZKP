@@ -79,10 +79,8 @@ template Main(nBits, d) {
    }
 
    signal noise <== numify[0].out;
-   //signal sign <== randomSequence[nBits * (d + 3)] * 1 + (1 - randomSequence[nBits * (d + 3)]) * (-1);
    signal sign <== randomSequence[nBits * (d + 3)] * (value + noise);
 
-//   signal resultA <== value + sign * noise; 
    signal resultA <== (1 - randomSequence[nBits * (d + 3)]) * (value - noise) + sign;
    
    for (var i = 0; i < nBits; i++) {
@@ -95,12 +93,11 @@ template Main(nBits, d) {
    
    signal result <== (1 - isResultB) * resultA + resultB;
 
-   signal output out; 
    component modulo = Modulo();
    modulo.in <== result;
    modulo.mod <== 128;
 
-   out <== modulo.out;   
+   signal output out <== modulo.out;
 }
 
 template Modulo() {
