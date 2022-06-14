@@ -32,10 +32,10 @@ template Main(nBits, d) {
 
    bitify.in <== hash.out; 
 
-   signal randomSequence[254];
+   signal randSeq[254];
 
    for(var i = 0; i < 254; i++) {
-      randomSequence[i] <== bitify.out[i];
+      randSeq[i] <== bitify.out[i];
    } 
 
    component isEqual[nBits][d];
@@ -59,7 +59,7 @@ template Main(nBits, d) {
 
       for (var j = 0;  j < d; j++) {
          isEqual[k][j].in[0] <== probability[k][j];
-         isEqual[k][j].in[1] <== randomSequence[k * d + j];
+         isEqual[k][j].in[1] <== randSeq[k * d + j];
 
          hit[k][j + 1] <== hit[k][j] * isEqual[k][j].out;
 
@@ -71,27 +71,28 @@ template Main(nBits, d) {
    }
 
    component numify[2];
+   // compute exponential noise from its binary representation 
    numify[0] = Bits2Num(nBits);
-   numify[1] = Bits2Num(nBits);
-
    for (var i = 0; i < nBits; i++) {
       numify[0].in[i] <== noiseBits[i];
    }
-
-   signal noise <== numify[0].out;
-   signal sign <== randomSequence[nBits * (d + 3)] * (value + noise);
-
-   signal resultA <== (1 - randomSequence[nBits * (d + 3)]) * (value - noise) + sign;
-   
+   signal absNoise <== numify[0].out;
+   // if(sign = 1) value + absNoise, else 0
+   signal positiveNoise <== randSeq[nBits * (d + 3)] * (value + absNoise);
+   // if(sign = 0) value - absNoise, else positiveNoise
+   signal noisedResult <== (1 - randSeq[nBits * (d + 3)]) * (value - absNoise) + positiveNoise;
+   // generate uniformly distributed noise 
+   numify[1] = Bits2Num(nBits);
    for (var i = 0; i < nBits; i++) {
-      numify[1].in[i] <== randomSequence[((d + 2) * nBits) + i];
+      numify[1].in[i] <== randSeq[((d + 2) * nBits) + i];
    }
+   // check if (noise = -0)
    component isZero = IsZero();
-   isZero.in <== noise;
-   signal isResultB <== isZero.out * (1 - randomSequence[nBits * (d + 3)]);
-   signal resultB <== isResultB * numify[1].out;
-   
-   signal result <== (1 - isResultB) * resultA + resultB;
+   isZero.in <== absNoise;
+   signal isUnif <== isZero.out * (1 - randSeq[nBits * (d + 3)]);
+   signal unif <== isUnif * numify[1].out;
+
+   signal result <== (1 - isUnif) * noisedResult + unif;
 
    component modulo = Modulo();
    modulo.in <== result;
@@ -116,7 +117,6 @@ template Modulo() {
    lt.in[0] <== out;
    lt.in[1] <== mod;
    lt.out === 1;
-   
 }
 
 component main {public [challenge, pk]} = Main(7, 22);
